@@ -67,6 +67,7 @@ module DockerCookbook
     property :stdin_once, Boolean, default: false, desired_state: false
     property :sysctls, Hash, default: {}
     property :timeout, [Integer, nil], desired_state: false
+    property :tmpfs, Hash, default: {}
     property :tty, Boolean, default: false
     property :ulimits, [Array, nil], coerce: proc { |v| coerce_ulimits(v) }
     property :user, String, default: ''
@@ -121,7 +122,7 @@ module DockerCookbook
       # Go through everything in the container and set corresponding properties:
       # c.info['Config']['ExposedPorts'] -> exposed_ports
       (container.info['Config'].to_a + container.info['HostConfig'].to_a).each do |key, value|
-        next if value.nil? || key == 'RestartPolicy' || key == 'Binds' || key == 'ReadonlyRootfs'
+        next if value.nil? || key == 'RestartPolicy' || key == 'Binds' || key == 'ReadonlyRootfs' || key == 'Tmpfs'
 
         # Image => image
         # Set exposed_ports = ExposedPorts (etc.)
@@ -137,6 +138,7 @@ module DockerCookbook
       restart_maximum_retry_count container.info['HostConfig']['RestartPolicy']['MaximumRetryCount']
       volumes_binds container.info['HostConfig']['Binds']
       ro_rootfs container.info['HostConfig']['ReadonlyRootfs']
+      tmpfs container.info['HostConfig']['Tmpfs']
       if container.info['NetworkSettings'] &&
          container.info['NetworkSettings']['Networks'] &&
          container.info['NetworkSettings']['Networks'][network_mode] &&
@@ -297,6 +299,7 @@ module DockerCookbook
               'ReadonlyRootfs'  => new_resource.ro_rootfs,
               'SecurityOpt'     => new_resource.security_opt,
               'Sysctls'         => new_resource.sysctls,
+              'Tmpfs'           => new_resource.tmpfs,
               'Ulimits'         => new_resource.ulimits_to_hash,
               'UsernsMode'      => new_resource.userns_mode,
               'UTSMode'         => new_resource.uts_mode,
